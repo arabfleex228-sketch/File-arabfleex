@@ -1,0 +1,218 @@
+<?php
+require_once 'db_config.php';
+
+// التحقق من تسجيل الدخول
+if (!isset($_SESSION['admin_id'])) {
+    header("Location: login.php");
+    exit();
+}
+
+// تحديد الصفحة الحالية
+$page = isset($_GET['page']) ? $_GET['page'] : 'dashboard';
+?>
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة التحكم - عرب فليكس</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <style>
+        /* --- التصميم الأصلي كما هو بدون أي تغيير في الألوان أو الأحجام --- */
+        :root {
+            --background-dark: #0A0A0A;
+            --background-light: #141414;
+            --brand-gold: #DAA520;
+            --text-primary: #f5f5f5;
+            --text-secondary: #a3a3a3;
+            --border-color: #262626;
+        }
+
+        body {
+            font-family: 'Cairo', sans-serif;
+            background-color: var(--background-dark);
+        }
+
+        .golden-text {
+            color: var(--brand-gold);
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            font-weight: 700;
+            color: var(--text-secondary);
+            transition: all 0.2s ease-in-out;
+            border: 2px solid transparent;
+        }
+
+        .nav-link:hover {
+            background-color: rgba(218, 165, 32, 0.1);
+            color: var(--brand-gold);
+        }
+
+        .nav-link.active {
+            background-color: var(--brand-gold);
+            color: #000;
+            box-shadow: 0 4px 14px 0 rgba(218, 165, 32, 0.4);
+        }
+        .nav-link.active i {
+            color: #000;
+        }
+
+        .logout-link:hover {
+            background-color: rgba(239, 68, 68, 0.1);
+            color: #ef4444;
+        }
+
+        /* --- تعديلات التجاوب فقط --- */
+
+        /* زر الهمبرجر: مخفي في الديسكتوب ويظهر في الموبايل */
+        #hamburger-menu-btn {
+            display: none;
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            z-index: 1100;
+            background: var(--background-light);
+            border: 1px solid var(--border-color);
+            padding: 0.6rem 0.8rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+        }
+
+        /* القائمة الجانبية في الديسكتوب */
+        aside {
+            width: 16rem; /* 64 بالـ Tailwind */
+            transition: transform 0.3s ease;
+        }
+
+        @media (max-width: 1024px) {
+            #hamburger-menu-btn {
+                display: block; /* يظهر فقط في الموبايل */
+            }
+            aside {
+                position: fixed;
+                top: 0;
+                right: -16rem; /* مخفي يميناً */
+                height: 100vh;
+                z-index: 1000;
+                box-shadow: -5px 0 15px rgba(0,0,0,0.5);
+            }
+            aside.active {
+                transform: translateX(-16rem); /* يتحرك لليسار ليظهر */
+            }
+            main {
+                margin-right: 0 !important;
+                padding: 1rem !important;
+                padding-top: 4.5rem !important; /* مسافة عشان الزرار */
+            }
+        }
+
+        /* طبقة سوداء عند فتح المنيو في الموبايل */
+        #menu-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.7);
+            z-index: 900;
+        }
+        #menu-overlay.active {
+            display: block;
+        }
+
+        /* منع مشاكل عرض الجداول */
+        main {
+            min-width: 0; 
+        }
+    </style>
+</head>
+<body class="bg-background-dark text-text-primary">
+
+<!-- زر الهمبرجر للموبايل فقط -->
+<div id="hamburger-menu-btn" class="lg:hidden shadow-2xl">
+    <i class="fas fa-bars text-brand-gold text-xl"></i>
+</div>
+
+<!-- طبقة حماية للموبايل -->
+<div id="menu-overlay"></div>
+
+<div class="flex min-h-screen">
+    <!-- Sidebar (نفس تصميمك الأصلي) -->
+    <aside id="sidebar-menu" class="bg-background-light border-l border-border-color flex flex-col p-4 shrink-0">
+        <div class="text-center mb-8 mt-2">
+            <a href="index.php" class="font-black text-3xl tracking-wider">
+                <span class="golden-text">عرب</span> <span class="text-white">فليكس</span>
+            </a>
+        </div>
+        <nav class="flex flex-col space-y-2">
+            <a href="index.php?page=dashboard" class="nav-link <?php if($page == 'dashboard') echo 'active'; ?>">
+                <i class="fas fa-tachometer-alt ml-3"></i> لوحة التحكم
+            </a>
+            <a href="index.php?page=movies" class="nav-link <?php if($page == 'movies') echo 'active'; ?>">
+                <i class="fas fa-film ml-3"></i> إدارة الأفلام
+            </a>
+            <a href="index.php?page=series" class="nav-link <?php if($page == 'series' || $page == 'episodes') echo 'active'; ?>">
+                <i class="fas fa-tv ml-3"></i> إدارة المسلسلات
+            </a>
+            <a href="index.php?page=requests" class="nav-link <?php if($page == 'requests') echo 'active'; ?>">
+                <i class="fas fa-envelope ml-3"></i> الطلبات والشكاوي
+            </a>
+             <a href="index.php?page=settings" class="nav-link <?php if($page == 'settings') echo 'active'; ?>">
+                <i class="fas fa-cogs ml-3"></i> الإعدادات
+            </a>
+        </nav>
+        <div class="mt-auto">
+            <a href="logout.php" class="nav-link logout-link">
+                <i class="fas fa-sign-out-alt ml-3"></i> تسجيل الخروج
+            </a>
+        </div>
+    </aside>
+
+    <!-- Main Content (نفس تصميمك الأصلي) -->
+    <main class="flex-1 p-6 md:p-8 lg:p-10 overflow-x-hidden">
+        <?php
+        $allowed_pages = ['dashboard', 'movies', 'series', 'episodes', 'requests', 'settings'];
+        if (in_array($page, $allowed_pages)) {
+            $page_file = "pages/{$page}.php";
+            if (file_exists($page_file)) {
+                include $page_file;
+            } else {
+                include "pages/dashboard.php";
+            }
+        } else {
+            include "pages/dashboard.php";
+        }
+        ?>
+    </main>
+</div>
+
+<!-- كود التحكم في فتح وإغلاق القائمة -->
+<script>
+    const btn = document.getElementById('hamburger-menu-btn');
+    const sidebar = document.getElementById('sidebar-menu');
+    const overlay = document.getElementById('menu-overlay');
+
+    function toggleMenu() {
+        sidebar.classList.toggle('active');
+        overlay.classList.toggle('active');
+    }
+
+    if(btn) btn.addEventListener('click', toggleMenu);
+    if(overlay) overlay.addEventListener('click', toggleMenu);
+
+    // إغلاق المنيو عند الضغط على أي رابط في الموبايل
+    document.querySelectorAll('.nav-link').forEach(link => {
+        link.addEventListener('click', () => {
+            if (window.innerWidth <= 1024) toggleMenu();
+        });
+    });
+</script>
+
+</body>
+</html>
